@@ -10,10 +10,8 @@ logs = sqlite3.connect("logs.db")
 cursor_data = data.cursor()
 cursor_logs = logs.cursor()
 
-# cadastro = [
-#     {"nome": "joao", "id": "2677980090", "auth": True},
-#     {"nome": "marina", "id": "219403520343", "auth": False}
-# ]
+# tag_id_1 = 2677980090 -- cadastrado com permissão
+# tag_id_2 = 219403520343 -- cadastrado sem permissão
 
 def validateIdAuthentication():
     print("Aguardando leitura da tag")
@@ -24,11 +22,12 @@ def validateIdAuthentication():
         cursor_data.execute("SELECT id, colaborador, tem_permissao FROM colaboradores WHERE tag_id = ?", (str(tag),))
         result = cursor_data.fetchone()
 
-        if result:
-            id, nome, tem_permissao = result
-            cursor_logs.execute("INSERT INTO logs_acesso (id, colaborador_id, acessou, data_acesso) VALUES ( ?, ?, ? )", (id, str(tag),))
-            result_logs = cursor_logs
+        colaborador_id = None
+        acessou = False
 
+        if result:
+            colaborador_id, nome, tem_permissao = result
+            acessou = bool(tem_permissao)
 
             if tem_permissao == True:
                 print(f"Acesso permitido para {nome}, com a tag {tag}")
@@ -36,6 +35,12 @@ def validateIdAuthentication():
                 print(f"Acesso negado para {nome}, com a tag {tag}")
         else:
             print("Tag não cadastrada no sistema")  
+
+        cursor_logs.execute(
+            "INSERT INTO logs_acesso (tag_id, colaborador_id, acessou, data_acesso) VALUES ( ?, ?, ?, CURRENT_TIMESTAMP)",
+            (str(tag), colaborador_id, acessou))
+
+        logs.commit()       
             
     except sqlite3.Error as e:
         print(f"Erro no banco de dados: {e}")
