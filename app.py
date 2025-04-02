@@ -18,7 +18,7 @@ def create_table():
         """CREATE TABLE IF NOT EXISTS colaboradores (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             colaborador TEXT NOT NULL,
-            tag_id NUMERIC NOT NULL,
+            tag_id TEXT NOT NULL,
             data_acesso DATETIME DEFAULT CURRENT_TIMESTAMP,
             tem_permissao BOOLEAN NOT NULL
         )"""
@@ -34,9 +34,11 @@ def logs_data():
     cursor.execute(
         """CREATE TABLE IF NOT EXISTS logs_acesso (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            FOREIGN KEY (colaborador_id) REFERENCES colaboradores(id),
+            tag_id TEXT NOT NULL,
+            colaborador_id INTEGER,
             acessou BOOLEAN NOT NULL,
             data_acesso DATETIME DEFAULT CURRENT_TIMESTAMP
+            FOREIGN KEY (colaborador_id) REFERENCES colaboradores(id),
         )"""
     )
     conn.commit()
@@ -87,7 +89,7 @@ def use_api():
                 cursor.execute('SELECT * FROM colaboradores')
                 rows = cursor.fetchall()
 
-            values = [{"id": row[0], "colaborador": row[1], "tag_id": row[2]} for row in rows]
+            values = [{"id": row[0], "colaborador": row[1], "tag_id": row[2], "tem_permissao": bool(row[3])} for row in rows]
 
             return jsonify(values), 200
         
@@ -134,11 +136,18 @@ def delete_data(dado_id):
 def get_logs():
     try:
         with connect_db() as conn:
-                        cursor = conn.cursor()
-                        cursor.execute('SELECT * FROM logs_acesso')
-                        rows = cursor.fetchall()
+            cursor = conn.cursor()
+            cursor.execute('SELECT * FROM logs_acesso')
+            rows = cursor.fetchall()
 
-                        values = [{"colaborador_id": row[0]} for row in rows]
+            values = [{"id": row[0],  
+                       "tag_id": row[1],  
+                       "colaborador_id": row[2],
+                       "acessou": bool(row[3]),
+                       "data_acesso": row[4]
+                       } for row in rows]
+        return jsonify(values), 200
+
     except sqlite3.Error as e:
         return jsonify({'error': str(e)}), 500
     finally:
