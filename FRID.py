@@ -26,8 +26,9 @@ def validateIdAuthentication():
 
         if result:
             id, nome, tem_permissao = result
-            cursor_logs.execute("INSERT INTO logs_acesso (id, colaborador_id, acessou, data_acesso) VALUES ( ?, ?, ? )", (str(tag),))
+            cursor_logs.execute("INSERT INTO logs_acesso (id, colaborador_id, acessou, data_acesso) VALUES ( ?, ?, ? )", (id, str(tag),))
             result_logs = cursor_logs
+
 
             if tem_permissao == True:
                 print(f"Acesso permitido para {nome}, com a tag {tag}")
