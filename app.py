@@ -59,6 +59,7 @@ logs_data()
 #     conn.close()
 
 # acessou_data()
+@app.route('/login', methods=['POST'])
 
 @app.route('/', methods=['POST', 'GET'])
 def use_api():
@@ -70,7 +71,7 @@ def use_api():
             tem_permissao = request.json.get('tem_permissao') 
             tag_id = request.json.get('tag_id')
 
-            if colaborador is None or tem_permissao is None or tag_id is None:
+            if None in [colaborador, tem_permissao, tag_id]:
                 return jsonify({"Erro": "Nenhum colaborador cadastrado"}), 400
         
             with connect_db() as conn:
@@ -102,7 +103,7 @@ def update_data(dado_id):
     tem_permissao = request.json.get('tem_permissao')
     tag_id = request.json.get('tag_id')
 
-    if colaborador is None or tem_permissao is None or tag_id is None:
+    if None in [colaborador, tem_permissao, tag_id]:
         return jsonify({"Erro": "Nome do colaborador é obrigatório!"}), 400
 
     try:
