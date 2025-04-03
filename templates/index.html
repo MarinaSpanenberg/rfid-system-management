@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <title>Monitoramento de Acessos</title>
+    <script src="https://cdn.pubnub.com/sdk/javascript/pubnub.8.2.7.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; margin: 20px; }
+        #messages, #dados, #logs, #sala { 
+            margin-top: 20px; max-height: 400px; overflow-y: auto; 
+            border: 1px solid #ccc; padding: 10px; width: 60%; margin: auto; 
+        }
+        .data-item { 
+            border-bottom: 1px solid #ddd; padding: 5px; 
+            background: #f4f4f4; margin: 5px 0; border-radius: 5px; 
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Monitoramento de Acessos</h1>
+
+    <h2>Mensagens em Tempo Real</h2>
+    <div id="messages"></div>
+
+    <h2>Colaboradores</h2>
+    <div id="dados"></div>
+
+    <h2>Logs de Acesso</h2>
+    <div id="logs"></div>
+
+    <h2>Controle de Acesso</h2>
+    <div id="sala"></div>
+
+    <script>
+        const showMessage = (msg, source) => {
+            const messageDiv = document.createElement('div');
+            messageDiv.classList.add('message');
+            messageDiv.innerText = `[${source}] ${msg}`;
+            document.getElementById('messages').appendChild(messageDiv);
+        };
+
+        const updateDataDisplay = (data, elementId) => {
+            const container = document.getElementById(elementId);
+            container.innerHTML = ""; // Limpa o conteúdo anterior
+
+            data.forEach(item => {
+                const div = document.createElement('div');
+                div.classList.add('data-item');
+                div.innerText = JSON.stringify(item, null, 2);
+                container.appendChild(div);
+            });
+
+        };
+
+        const fetchDataFromAPI = async () => {
+            try {
+                const responseDados = await fetch('http://10.1.25.125:5000/dados');
+                const dados = await responseDados.json();
+                console.log(dados);
+                
+                updateDataDisplay(dados, 'dados');
+
+                const responseLogs = await fetch('http://10.1.25.125:5000/logs');
+                const logs = await responseLogs.json();
+                console.log(logs);
+
+                updateDataDisplay(logs, 'logs');
+
+                const responseSala= await fetch('http://10.1.25.125:5000/sala');
+                const sala = await responseSala.json();
+                console.log(sala);
+
+                updateDataDisplay(sala, 'sala');
+
+            } catch (error) {
+                console.error("Erro ao buscar dados da API:", error);
+            }
+        };
+
+        const setupPubNub = () => {
+            const pubnub = new PubNub({
+                publishKey: "pub-c-e13d78f9-6c34-4087-a7a2-d95ae19936db",
+                subscribeKey: "sub-c-22cdf9b7-ca1d-4af3-9fb4-8a34a0106007",
+                userId: "pubnub_index"
+            });
+
+            pubnub.subscribe({
+                channels: ["meu_canal"]
+            });
+
+            pubnub.addListener({
+                message: function(event) {
+                    console.log("PubNub Mensagem Recebida:", event.message);
+                    showMessage(event.message.nome + " - " + (event.message["conseguiu acessar?"] ? "Permitido" : "Negado"), "PubNub");
+                    fetchDataFromAPI(); // Atualiza os dados após nova mensagem
+                }
+            });
+        };
+
+        window.onload = () => {
+            setupPubNub();
+            fetchDataFromAPI();
+        };
+    </script>
+
+</body>
+
+</html>
